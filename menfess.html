@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Garden Party Roulette</title>
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom, #a8e063, #56ab2f);
+      color: #333;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 600px;
+    }
+
+    h1 {
+      color: #2d572c;
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 20px 40px;
+      font-size: 24px;
+      cursor: pointer;
+      background-color: #2d572c;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      display: block;
+      margin: 0 auto;
+    }
+
+    button:hover {
+      background-color: #45a049;
+      transform: scale(1.1);
+    }
+
+    #roulette {
+      width: 200px;
+      height: 200px;
+      border: 8px solid #45a049;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 36px;
+      font-weight: bold;
+      margin: 20px auto;
+      color: #333;
+      background: radial-gradient(circle, #f4f4f4, #d8f3dc);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      visibility: hidden;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(720deg);
+      }
+    }
+
+    form {
+      margin-top: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      align-items: center;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    input,
+    textarea {
+      padding: 10px;
+      font-size: 25px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      width: 100%;
+      background-color: #f9fff0;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    textarea {
+      resize: none;
+      height: 80px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    input,
+    textarea {
+      padding: 10px;
+      font-size: 25px;
+      border: none;
+      /* Hilangkan border */
+      background-color: transparent;
+      /* Tidak ada latar belakang */
+      color: #333;
+      /* Warna teks tetap terlihat */
+      box-shadow: none;
+      /* Hilangkan bayangan */
+      outline: none;
+      /* Hilangkan outline ketika dipilih */
+      width: 100%;
+      font-family: "Georgia", serif;
+      /* Pilih font yang sesuai */
+    }
+
+    input[readonly],
+    textarea[readonly] {
+      pointer-events: none;
+      /* Tidak bisa diinteraksi dengan input */
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>MENFESS NATAL NHKBP 2024</h1>
+    <button id="startRoulette">Mulai Spin</button>
+    <div id="roulette">?</div>
+    <form class="hidden" id="resultForm">
+      <label>
+        <span>From:</span>
+        <input type="text" id="from" readonly>
+      </label>
+      <label>
+        <span>To:</span>
+        <input type="text" id="to" readonly>
+      </label>
+      <label>
+        <span>Pesan:</span>
+        <textarea id="pesan" readonly></textarea>
+      </label>
+      <button id="rouletteAgain">Spin Lagi</button>
+    </form>
+  </div>
+
+  <script>
+    const API_KEY = 'AIzaSyAivYqwTU4h05r3Ki6QN-ZJ0Ycun2zX2O4';
+    const SPREADSHEET_ID = '1wJTOeXWCVsbLClFXYIQ10nxqHWOxCjO8E_xYbOJSzbM';
+    const RANGE = 'Sheet1';
+    let totalRows = 0;
+    let selectedRows = [];
+
+    const rouletteDiv = document.getElementById('roulette');
+    const startButton = document.getElementById('startRoulette');
+    const resultForm = document.getElementById('resultForm');
+    const rouletteAgainButton = document.getElementById('rouletteAgain');
+
+    async function fetchSpreadsheetRange() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+      try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        totalRows = data.values.length;
+      } catch (error) {
+        console.error("Failed to fetch data:", error.message);
+        alert("Gagal mengambil data. Periksa konfigurasi API Anda.");
+      }
+    }
+
+    async function fetchSpreadsheetData(row) {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!B${row}:D${row}?key=${API_KEY}`;
+      try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.values || data.values.length === 0) {
+          alert("Tidak ada data pada baris yang dipilih.");
+          return;
+        }
+
+        const [from, to, pesan] = data.values[0];
+        document.getElementById('from').value = from || '';
+        document.getElementById('to').value = to || '';
+        document.getElementById('pesan').value = pesan || '';
+      } catch (error) {
+        console.error("Failed to fetch data:", error.message);
+        alert("Gagal mengambil data. Periksa konfigurasi API Anda.");
+      }
+    }
+
+    function startRoulette() {
+      if (totalRows === 0) {
+        alert("Jumlah data tidak ditemukan. Pastikan data tersedia di spreadsheet.");
+        return;
+      }
+
+      if (selectedRows.length >= totalRows - 1) {
+        alert("Semua data sudah dipilih.");
+        return;
+      }
+
+      rouletteDiv.style.visibility = "visible";
+      rouletteDiv.style.animation = "spin 2s linear";
+      startButton.classList.add('hidden');
+
+      setTimeout(() => {
+        rouletteDiv.style.animation = "none";
+
+        let randomRow;
+        do {
+          randomRow = Math.floor(Math.random() * totalRows) + 1;
+        } while (selectedRows.includes(randomRow));
+
+        selectedRows.push(randomRow);
+        rouletteDiv.textContent = randomRow;
+
+        fetchSpreadsheetData(randomRow);
+
+        setTimeout(() => {
+          rouletteDiv.style.visibility = "hidden";
+          rouletteDiv.style.display = "none";
+          resultForm.classList.remove('hidden');
+        }, 1000);
+      }, 2000);
+    }
+
+    startButton.addEventListener('click', startRoulette);
+
+    rouletteAgainButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      resultForm.classList.add('hidden');
+      startButton.classList.remove('hidden');
+      rouletteDiv.textContent = "?";
+      rouletteDiv.style.display = "flex";
+    });
+
+    window.onload = fetchSpreadsheetRange;
+  </script>
+</body>
+
+</html>
